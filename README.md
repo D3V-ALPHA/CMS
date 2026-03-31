@@ -12,10 +12,12 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 - [Features](#features)
 - [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
-- [Architectural Decisions](#architectural-decisions)
+- [Architectural Decisions / Production Notes](#architectural-decisions--production-notes)
 - [Running the Project](#running-the-project)
+- [Troubleshooting](#troubleshooting)
 - [Environment Variables](#environment-variables)
 - [Bonus Features](#bonus-features)
+- [Screenshots](#screenshots)
 
 ---
 
@@ -486,7 +488,7 @@ Inline modal for viewing lessons, marking them complete, and tracking real‑tim
 
 Course list, lesson list with drag‑and‑drop, and live activity feed.
 
-![Create Course](screenshots/image_2026-03-31_200745916.PNG)
+![Create Course](screenshots/image_2026-03-31_200745916.png)
 
 Creating a new course via modal.
 
@@ -498,7 +500,7 @@ Adding a lesson to a course with title, content, and order.
 
 ### 🐳 Docker Containers
 
-![Docker Containers](screenshots/docker-containers.png.PNG)
+![Docker Containers](screenshots/docker-containers.png.png)
 
 The Docker Compose project `cms` runs three containers:
 - `cms-redis` – Redis cache
