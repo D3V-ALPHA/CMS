@@ -281,7 +281,7 @@ Copy `.env.example` to `.env` and fill in your values:
 | `REDIS_PORT` | Redis port | `6379` |
 | `JWT_ACCESS_SECRET` | Secret for signing access tokens | any long random string |
 | `JWT_REFRESH_SECRET` | Secret for signing refresh tokens | any long random string |
-| `JWT_ACCESS_EXPIRES` | Access token expiry | `15m` |
+| `JWT_ACCESS_EXPIRES` | Access token expiry | `7d` |
 | `JWT_REFRESH_EXPIRES` | Refresh token expiry | `7d` |
 
 > **Using Supabase?** Set `DATABASE_URL` to your Supabase connection string and ignore the `POSTGRES_*` variables — those are only used when running a local PostgreSQL container via Docker Compose.
