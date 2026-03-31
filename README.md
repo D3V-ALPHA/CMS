@@ -38,7 +38,7 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 ### 🔐 Auth
 - Register and login on the same page with tab toggle
 - Role selection on register — **Teacher** or **Student**
-- JWT access token (15 min) + refresh token (7 days) rotation
+- JWT access token (valid for 7 days) – no JWT refresh token; refresh tokens are stored in Redis with a 7‑day TTL
 - Protected routes per role — teachers and students cannot access each other's views
 - Persistent auth state via Zustand with localStorage
 
@@ -162,31 +162,44 @@ GET    /students/:id/progress               — progress by student ID (student 
 
 ---
 
-## 🏗 Architectural Decisions
+### Authentication Flow
+
+- **Access tokens** are signed JWTs with a 7‑day expiry (configurable via `JWT_ACCESS_EXPIRES`).  
+- **Refresh tokens** are **not** JWTs. Instead, when a user logs in, a random UUID is generated, stored in Redis with a 7‑day TTL, and returned as the refresh token.  
+- On `/auth/refresh`, the provided refresh token is looked up in Redis. If found, it is deleted and a new refresh token is generated (rotation), and a fresh access token is issued.  
+- The `JwtStrategy` validates the access token using the secret. The `RefreshTokenStrategy` (custom Passport strategy) reads the refresh token from the request body and checks Redis.
+
+### Token Handling in the Frontend
+
+- The `authSync.ts` module listens to the Zustand store and calls `setAuthToken` to update the Axios default header whenever the access token changes.  
+- All API requests automatically include the `Authorization: Bearer <token>` header.  
+- **No automatic refresh interceptor** is implemented. Instead, to keep the assessment simple and avoid 401 errors during testing, the access token expiry has been set to 7 days.  
+- In a production application, a proper Axios interceptor would be added to `/src/lib/api.ts` to catch 401 responses, call `/auth/refresh`, and retry the original request.
+
+### WebSocket & Real‑Time Events
+
+- The WebSocket gateway uses `io()` (relative path) so it works both locally (proxied by Vite) and in Docker (proxied by Nginx).  
+- Events are published to a Redis channel `activity_channel` by the services (`enrollments` and `progress`). The gateway subscribes and broadcasts to all connected clients.  
+- The frontend `useActivityFeed` hook automatically reconnects on disconnect (handled by Socket.IO client).
 
 ### Redis Pub/Sub for WebSockets
 Rather than emitting WebSocket events directly from services, all activity events are published to a Redis channel (`activity_channel`). The WebSocket gateway subscribes to this channel and broadcasts to all connected clients. This decouples the business logic from the WebSocket layer and makes the system ready for horizontal scaling — multiple API instances can publish to the same Redis channel and all clients receive events regardless of which instance they are connected to.
 
 ### Progress Calculation
-Progress percentage is calculated server-side as:
+Progress percentage is calculated server‑side as:
 
-```
 (completed lessons in this course / total lessons in this course) × 100
-```
 
-Completed lessons are always filtered to the specific course before counting — this prevents cross-course contamination where completing a lesson in Course A would incorrectly inflate the progress of Course B.
+Completed lessons are always filtered to the specific course before counting — this prevents cross‑course contamination where completing a lesson in Course A would incorrectly inflate the progress of Course B.
 
 ### Course Modal Instead of a Course Page
-The student-facing lesson view is implemented as an inline modal component rather than a separate route. This keeps the page count minimal and the navigation clean — students never lose context of the course browser while completing lessons.
+The student‑facing lesson view is implemented as an inline modal component rather than a separate route. This keeps the page count minimal and the navigation clean — students never lose context of the course browser while completing lessons.
 
 ### Route Ordering in NestJS
-Static routes (`/students/me/progress`) are always declared before dynamic routes (`/students/:id/progress`) in the controller. NestJS matches routes top-to-bottom — without this ordering, the literal string `me` would be matched as a student ID parameter and the endpoint would never be reached.
+Static routes (`/students/me/progress`) are always declared before dynamic routes (`/students/:id/progress`) in the controller. NestJS matches routes top‑to‑bottom — without this ordering, the literal string `me` would be matched as a student ID parameter and the endpoint would never be reached.
 
-### Production Notes
-- **CORS** — The backend currently allows all origins (`*`). In production, restrict this to your frontend domain.
-- **JWT Refresh** — An Axios interceptor in `src/lib/api.ts` handles automatic token refresh when a 401 response is received, using the stored refresh token.
-- **Migrations** — Drizzle migrations run automatically on backend container startup — no manual steps required.
-
+### CORS
+The backend currently allows all origins (`*`). In production, restrict this to your frontend domain.
 ---
 
 ## 🚀 Running the Project
@@ -376,16 +389,14 @@ Copy `.env.example` to `.env` and fill in your values:
 | Variable | Description | Example |
 |---|---|---|
 | `PORT` | Backend server port | `3000` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
-| `POSTGRES_USER` | PostgreSQL user (Docker only) | `postgres` |
-| `POSTGRES_PASSWORD` | PostgreSQL password (Docker only) | `postgres` |
-| `POSTGRES_DB` | PostgreSQL database name (Docker only) | `cms` |
+| `DATABASE_URL` | PostgreSQL connection string (Supabase or local) | `postgresql://user:pass@host:5432/db?sslmode=require` |
 | `REDIS_HOST` | Redis hostname | `localhost` or `redis` in Docker |
 | `REDIS_PORT` | Redis port | `6379` |
 | `JWT_ACCESS_SECRET` | Secret for signing access tokens | any long random string |
-| `JWT_ACCESS_EXPIRES` | Access token expiry | `15m` |
+| `JWT_ACCESS_EXPIRES` | Access token expiry (e.g., `15m`, `7d`) | `7d` |
 
-> **Using Supabase?** Set `DATABASE_URL` to your Supabase connection string and ignore the `POSTGRES_*` variables — those are only used when running a local PostgreSQL container via Docker Compose.
+> **Note:** Refresh tokens are stored in Redis, not signed with a secret. No `JWT_REFRESH_SECRET` is needed.  
+> If you use the optional local PostgreSQL container, also set the `POSTGRES_*` variables (see `docker-compose.yml`).
 
 ---
 
@@ -395,11 +406,11 @@ Beyond what was required by the assessment, the following were also implemented:
 
 | Bonus | Status |
 |---|---|
-| Refresh token rotation | ✅ Implemented |
+| Refresh token rotation | ✅ Implemented (Redis‑based) |
 | Optimistic UI on lesson completion | ✅ Implemented |
 | ThrottlerModule rate limiting configured | ✅ Implemented |
 | Teacher email displayed on student course cards | ✅ Implemented |
-| Per-lesson completed state via dedicated endpoint | ✅ Implemented |
+| Per‑lesson completed state via dedicated endpoint | ✅ Implemented |
 | Dark / light theme with correct skeleton loading states | ✅ Implemented |
 | Animated UI throughout with Framer Motion | ✅ Implemented |
 | Redis pub/sub fully decoupled from WebSocket layer | ✅ Implemented |
