@@ -486,7 +486,7 @@ Inline modal for viewing lessons, marking them complete, and tracking real‑tim
 
 Course list, lesson list with drag‑and‑drop, and live activity feed.
 
-![Create Course](screenshots/create-course.png.PNG)
+![Create Course](screenshots/image_2026-03-31_200745916.PNG)
 
 Creating a new course via modal.
 
