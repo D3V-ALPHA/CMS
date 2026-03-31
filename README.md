@@ -18,7 +18,6 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 - [Environment Variables](#environment-variables)
 - [Bonus Features](#bonus-features)
 - [Screenshots](#screenshots)
-
 ---
 
 ## 🛠 Tech Stack
