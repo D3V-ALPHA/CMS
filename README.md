@@ -191,38 +191,68 @@ Static routes (`/students/me/progress`) are always declared before dynamic route
 
 ## 🚀 Running the Project
 
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-- Git
+### 📦 Prerequisites
 
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — for the containerised run
+- A [Supabase](https://supabase.com) account — free tier is enough
+- A terminal — PowerShell, bash, or any terminal
+
+---
+
+### ⚙️ Environment Setup (Required for Both Options)
+
+Before running the project you need to create a `.env` file in the `backend/` folder.
+
+**Step 1 — Copy the example file:**
+```bash
+cp backend/.env.example backend/.env
+```
+
+**Step 2 — Get your Supabase DATABASE_URL:**
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. Create a new project — remember the database password you set
+3. Once the project is ready, click the green **Connect** button in the top-right
+4. Under **ORM**, select **Drizzle**
+5. Click the **.env** tab — copy the `DATABASE_URL` line
+6. Make sure the URL ends with `?sslmode=require` — add it if missing
+
+**Step 3 — Generate your JWT secrets:**
+```bash
+openssl rand -hex 32
+```
+**Step 4 — Fill in `backend/.env`:**
+```
+PORT=3000
+DATABASE_URL=your-supabase-url-here?sslmode=require
+REDIS_HOST=localhost
+REDIS_PORT=6379
+JWT_ACCESS_SECRET=your-generated-secret
+JWT_REFRESH_SECRET=your-second-generated-secret
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=7d
+```
 ---
 
 ### ⭐ Option 1 — Docker (Recommended — Single Command)
 
-This is the primary way to run the project. One command starts everything.
-
-**1. Clone the repository**
+**1. Clone the repository:**
 ```bash
-git clone https://github.com/YOUR_USERNAME/cms.git
-cd cms
+git clone https://github.com/D3V-ALPHA/CMS.git
+cd CMS
 ```
 
-**2. Set up environment variables**
-```bash
-cp .env.example .env
-```
-Open `.env` and fill in your values — see [Environment Variables](#environment-variables) below.
+**2. Complete the environment setup above**
 
-**3. Start the entire stack**
+**3. Start the entire stack:**
 ```bash
 docker compose up --build
 ```
 
-This single command starts:
-- ✅ Redis cache
-- ✅ PostgreSQL database (if using local DB)
-- ✅ NestJS backend — migrations run automatically on startup
-- ✅ React frontend — served via Nginx
+This single command automatically:
+- ✅ Starts Redis cache
+- ✅ Builds and starts the NestJS backend
+- ✅ Runs all database migrations on startup
+- ✅ Builds and serves the React frontend via Nginx
 
 | Service | URL |
 |---|---|
@@ -238,21 +268,23 @@ docker compose down
 
 ### 🔧 Option 2 — Local Development (Without Docker)
 
-You will need Node.js 18+ and a running Redis instance.
+Gives you hot-reload on both frontend and backend. Requires Node.js 18+.
 
-**Terminal 1 — Start Redis only via Docker:**
+**1. Clone and set up environment** (same as above)
+
+**2. Start Redis via Docker:**
 ```bash
 docker compose up redis
 ```
 
-**Terminal 2 — Start the backend:**
+**3. Start the backend** (in a new terminal):
 ```bash
 cd backend
 npm install
 npm run start:dev
 ```
 
-**Terminal 3 — Start the frontend:**
+**4. Start the frontend** (in another new terminal):
 ```bash
 cd frontend
 npm install
@@ -263,6 +295,79 @@ npm run dev
 |---|---|
 | Frontend | http://localhost:5173 |
 | Backend API | http://localhost:3000 |
+
+---
+
+### ✅ Verify Everything Works
+
+1. Register as a **Teacher** — create a course and add lessons
+2. Register as a **Student** — enroll in the course and complete lessons
+3. Watch the **Teacher dashboard live activity feed** update in real time
+
+---
+
+### 🔧 Troubleshooting
+
+**Docker cannot resolve Supabase hostname**
+
+If you see `getaddrinfo ENOTFOUND db.xxx.supabase.co`, your Docker environment
+has a DNS issue. Fix it by going to **Docker Desktop → Settings → Docker Engine**
+and adding:
+```json
+{
+  "dns": ["8.8.8.8", "8.8.4.4"]
+}
+```
+Click **Apply & Restart**, then run `docker compose up --build` again.
+
+### 🐘 Alternative: Use a Local PostgreSQL Container
+
+If you cannot connect to Supabase (e.g., due to network restrictions), you can run a local PostgreSQL database inside Docker. Follow these steps:
+
+1. **Add the PostgreSQL service** to your `docker-compose.yml` (paste the block below into the file, right before the `networks:` section):
+
+   ```yaml
+   # ────────────────────────────────────────────────────────────
+   # Local PostgreSQL – uncomment if you cannot reach Supabase
+   # ────────────────────────────────────────────────────────────
+   postgres:
+     image: postgres:16-alpine
+     container_name: cms-postgres
+     restart: unless-stopped
+     environment:
+       POSTGRES_USER: postgres
+       POSTGRES_PASSWORD: postgres
+       POSTGRES_DB: cms
+     ports:
+       - "5432:5432"
+     volumes:
+       - postgres_data:/var/lib/postgresql/data
+     networks:
+       - cms-network
+     healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U postgres -d cms"]
+       interval: 10s
+       timeout: 5s
+       retries: 5
+
+   networks:
+     cms-network:
+       driver: bridge
+
+   volumes:
+     postgres_data:
+
+then change your
+`DATABASE_URL` in `backend/.env` to:
+```
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cms?sslmode=disable
+```
+
+Then run:
+```bash
+docker compose up --build
+```
+The local database and migrations will be handled automatically.
 
 ---
 
@@ -281,7 +386,7 @@ Copy `.env.example` to `.env` and fill in your values:
 | `REDIS_PORT` | Redis port | `6379` |
 | `JWT_ACCESS_SECRET` | Secret for signing access tokens | any long random string |
 | `JWT_REFRESH_SECRET` | Secret for signing refresh tokens | any long random string |
-| `JWT_ACCESS_EXPIRES` | Access token expiry | `7d` |
+| `JWT_ACCESS_EXPIRES` | Access token expiry | `15m` |
 | `JWT_REFRESH_EXPIRES` | Refresh token expiry | `7d` |
 
 > **Using Supabase?** Set `DATABASE_URL` to your Supabase connection string and ignore the `POSTGRES_*` variables — those are only used when running a local PostgreSQL container via Docker Compose.
