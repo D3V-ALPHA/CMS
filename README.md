@@ -10,14 +10,15 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 
 - [Tech Stack](#-tech-stack)
 - [Features](#-features)
-- [Project Structure](#project-structure)
-- [API Endpoints](#api-endpoints)
-- [Architectural Decisions / Production Notes](#architectural-decisions--production-notes)
-- [Running the Project](#running-the-project)
-- [Troubleshooting](#troubleshooting)
-- [Environment Variables](#environment-variables)
+- [Project Structure](#-project-structure)
+- [API Endpoints](#-api-endpoints)
+- [Architectural Decisions / Production Notes](#%EF%B8%8F-architectural-decisions--production-notes)
+- [Database Schema](#%EF%B8%8F-database-schema)
+- [Running the Project](#-running-the-project)
+- [Troubleshooting](#-troubleshooting)
+- [Environment Variables](#%EF%B8%8F-environment-variables)
 - [Bonus Features](#bonus-features)
-- [Screenshots](#screenshots)
+- [Screenshots](#%EF%B8%8F-screenshots)
 ---
 
 ## 🛠 Tech Stack
