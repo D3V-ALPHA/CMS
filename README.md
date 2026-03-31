@@ -161,6 +161,7 @@ GET    /students/:id/progress               — progress by student ID (student 
 > Role guards are strictly enforced — teachers and students can only access what belongs to them.
 
 ---
+## 🛠️ Architectural Decisions / Production Notes 
 
 ### Authentication Flow
 
@@ -200,6 +201,46 @@ Static routes (`/students/me/progress`) are always declared before dynamic route
 
 ### CORS
 The backend currently allows all origins (`*`). In production, restrict this to your frontend domain.
+
+---
+
+---
+
+## 🗄️ Database Schema
+
+The database consists of five tables with proper foreign keys and indexes to support the LMS functionality.
+
+### Entity‑Relationship Diagram
+
+![Database Schema](screenshots/db-schema.png.PNG)
+
+### Tables
+
+| Table | Columns | Description |
+|-------|---------|-------------|
+| `users` | `id`, `email`, `password_hash`, `role`, `created_at` | Stores user accounts with roles `teacher` or `student`. |
+| `courses` | `id`, `title`, `description`, `teacher_id`, `created_at` | Courses created by teachers. `teacher_id` references `users.id`. |
+| `lessons` | `id`, `course_id`, `title`, `content`, `order`, `created_at` | Lessons belonging to a course. `order` ensures unique ordering per course (unique index `unique_course_order`). |
+| `enrollments` | `id`, `student_id`, `course_id`, `enrolled_at` | Many‑to‑many relationship between students and courses. Unique index `unique_student_course` prevents duplicate enrollments. |
+| `progress` | `id`, `student_id`, `lesson_id`, `completed`, `completed_at` | Tracks lesson completion. Unique index `unique_student_lesson` ensures each student can complete a lesson only once. |
+
+### Key Constraints & Indexes
+
+- `courses.teacher_id` → `users.id` (cascade delete)
+- `lessons.course_id` → `courses.id` (cascade delete)
+- `enrollments.student_id` → `users.id` (cascade delete)
+- `enrollments.course_id` → `courses.id` (cascade delete)
+- `progress.student_id` → `users.id` (cascade delete)
+- `progress.lesson_id` → `lessons.id` (cascade delete)
+
+- `unique_student_course` – prevents a student from enrolling in the same course twice.
+- `unique_course_order` – ensures lesson orders are unique per course.
+- `unique_student_lesson` – prevents duplicate completion records.
+
+All foreign keys are defined with `ON DELETE CASCADE` so that when a user or course is deleted, related records are automatically removed.
+
+The migration file [`0000_flashy_rictor.sql`](backend/src/database/migrations/0000_flashy_rictor.sql) contains the exact SQL used to create the schema.
+
 ---
 
 ## 🚀 Running the Project
@@ -417,6 +458,56 @@ Beyond what was required by the assessment, the following were also implemented:
 
 ---
 
+## 🖼️ Screenshots
+
+### 🔐 Authentication
+
+![Auth Page](screenshots/auth-page.png.PNG)
+
+The login/register screen with role selection.
+
+---
+
+### 🎓 Student Dashboard & Lesson Completion
+
+![Student Dashboard](screenshots/student-dashboard.png.PNG)
+
+Course browser with pagination, live search, enrolled courses, and progress bars.
+
+![Complete Lesson](screenshots/complete-lesson.png.PNG)
+
+Inline modal for viewing lessons, marking them complete, and tracking real‑time progress.
+
+---
+
+### 👩‍🏫 Teacher Dashboard & Management
+
+![Teacher Dashboard](screenshots/teacher-dashboard.png.PNG)
+
+Course list, lesson list with drag‑and‑drop, and live activity feed.
+
+![Create Course](screenshots/create-course.png.PNG)
+
+Creating a new course via modal.
+
+![Add Lesson](screenshots/add-lesson.png.PNG)
+
+Adding a lesson to a course with title, content, and order.
+
+---
+
+### 🐳 Docker Containers
+
+![Docker Containers](screenshots/docker-containers.png.PNG)
+
+The Docker Compose project `cms` runs three containers:
+- `cms-redis` – Redis cache
+- `cms-backend` – NestJS API (port 3000)
+- `cms-frontend` – React frontend served by Nginx (port 5173)
+
+All services start together with `docker compose up`.
+
+---
 ## 👨‍💻 Author
 
 **Muhammad Ali Ashraf**
