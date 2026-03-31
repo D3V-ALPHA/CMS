@@ -8,8 +8,8 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 
 ## 📋 Table of Contents
 
-- [Tech Stack](#tech-stack)
-- [Features](#features)
+- [Tech Stack](#-tech-stack)
+- [Features](#-features)
 - [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
 - [Architectural Decisions / Production Notes](#architectural-decisions--production-notes)
