@@ -17,7 +17,7 @@ A full-stack Learning Management System built as a technical assessment. Teacher
 - [Running the Project](#-running-the-project)
 - [Troubleshooting](#-troubleshooting)
 - [Environment Variables](#%EF%B8%8F-environment-variables)
-- [Bonus Features](#bonus-features)
+- [Bonus Features Delivered](#-bonus-features-delivered)
 - [Screenshots](#%EF%B8%8F-screenshots)
 ---
 
